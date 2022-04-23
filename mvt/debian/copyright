@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: mvt
+Upstream-Contact: Claudio Guarnieri <nex@nex.sx>
+Source: https://github.com/mvt-project/mvt
+
+Files: *
+Copyright: Claudio Guarnieri <nex@nex.sx>
+License: MVT-1.1
+
+Files: debian/*
+Copyright: 2022 © Cyril Brulebois <cyril@debamax.com>
+License: MVT-1.1

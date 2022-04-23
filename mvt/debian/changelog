@@ -1,0 +1,7 @@
+mvt (1.5.4-1~pirogue1) bullseye; urgency=low
+
+  * Initial, minimal packaging for the PiRogue (based on bullseye), see
+    <https://github.com/PiRogueToolSuite/deb-python> for more information.
+
+ -- Cyril Brulebois <cyril@debamax.com>  Wed, 20 Apr 2022 08:53:20 +0000
+
