@@ -1,0 +1,17 @@
+Source: nskeyedunarchiver
+Section: python
+Priority: optional
+Maintainer: Cyril Brulebois <cyril@debamax.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools,
+Standards-Version: 4.2.0
+Homepage: https://github.com/avibrazil/NSKeyedUnArchiver
+
+Package: python3-nskeyedunarchiver
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends},
+Description: decodes Apple's NSKeyedArchiver
+ FIXME: Long description.
