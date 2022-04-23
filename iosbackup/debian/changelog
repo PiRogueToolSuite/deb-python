@@ -1,0 +1,7 @@
+iosbackup (0.9.923-1~pirogue1) bullseye; urgency=low
+
+  * Initial, minimal packaging for the PiRogue (based on bullseye), see
+    <https://github.com/PiRogueToolSuite/deb-python> for more information.
+
+ -- Cyril Brulebois <cyril@debamax.com>  Wed, 20 Apr 2022 09:01:12 +0000
+

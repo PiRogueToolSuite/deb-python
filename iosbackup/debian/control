@@ -1,0 +1,19 @@
+Source: iosbackup
+Section: python
+Priority: optional
+Maintainer: Cyril Brulebois <cyril@debamax.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools,
+ python3-nskeyedunarchiver,
+ python3-pycryptodome,
+Standards-Version: 4.2.0
+Homepage: https://github.com/avibrazil/iOSbackup
+
+Package: python3-iosbackup
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends},
+Description: reads and extracts files from password-encrypted iOS backups
+ FIXME: Long description.

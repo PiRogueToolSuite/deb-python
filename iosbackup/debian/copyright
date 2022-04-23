@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: iOSbackup
+Upstream-Contact: Avi Alkalay <avibrazil@gmail.com>
+Source: https://github.com/avibrazil/iOSbackup
+
+Files: *
+Copyright: Avi Alkalay <avibrazil@gmail.com>
+License: LGPL
+
+Files: debian/*
+Copyright: 2022 © Cyril Brulebois <cyril@debamax.com>
+License: LGPL
