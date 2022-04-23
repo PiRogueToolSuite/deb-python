@@ -1,0 +1,22 @@
+Source: adb-shell
+Section: python
+Priority: optional
+Maintainer: Cyril Brulebois <cyril@debamax.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools,
+ python3-cryptography,
+ python3-pyasn1,
+ python3-rsa,
+Standards-Version: 4.2.0
+Homepage: https://github.com/JeffLIrion/adb_shell
+
+Package: python3-adb-shell
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+Description: Python implementation of ADB with shell and FileSync functionality
+ FIXME: Long description.
