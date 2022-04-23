@@ -3,3 +3,8 @@
 export PYBUILD_NAME=mvt
 %:
 	dh $@ --with python3 --buildsystem=pybuild
+
+# Shipped in the tarball, modified after a build:
+override_dh_clean:
+	dh_clean
+	rm -rf mvt.egg-info/
