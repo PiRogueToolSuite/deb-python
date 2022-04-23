@@ -18,5 +18,7 @@ Architecture: all
 Depends:
  ${misc:Depends},
  ${python3:Depends},
+ python3-aiofiles,
+ python3-libusb1,
 Description: Python implementation of ADB with shell and FileSync functionality
  FIXME: Long description.
