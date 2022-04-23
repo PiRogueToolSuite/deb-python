@@ -7,3 +7,8 @@ export PYBUILD_NAME=adb-shell
 # setup.py declares tests, but none exists:
 override_dh_auto_test:
 	@echo "No test suite."
+
+# Shipped in the tarball, modified after a build:
+override_dh_clean:
+	dh_clean
+	rm -rf adb_shell.egg-info/
