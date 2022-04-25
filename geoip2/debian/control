@@ -1,0 +1,21 @@
+Source: geoip2
+Section: python
+Priority: optional
+Maintainer: Cyril Brulebois <cyril@debamax.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-aiohttp,
+ python3-all,
+ python3-maxminddb (>= 2.2.0),
+ python3-requests,
+ python3-setuptools,
+ python3-urllib3,
+Standards-Version: 4.2.0
+Homepage: http://www.maxmind.com/
+
+Package: python3-geoip2
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends},
+Description: MaxMind GeoIP2 API
+ FIXME: Long description.
