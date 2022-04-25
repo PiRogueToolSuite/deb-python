@@ -1,0 +1,7 @@
+maxminddb (2.2.0-1~pirogue1) bullseye; urgency=low
+
+  * Initial, minimal packaging for the PiRogue (based on bullseye), see
+    <https://github.com/PiRogueToolSuite/deb-python> for more information.
+
+ -- Cyril Brulebois <cyril@debamax.com>  Sat, 23 Apr 2022 13:32:55 +0000
+
