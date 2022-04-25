@@ -3,3 +3,6 @@
 export PYBUILD_NAME=geoip2
 %:
 	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_test:
+	@echo "Sorry: disabled test suite to avoid having to pull mocket."
