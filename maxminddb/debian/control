@@ -18,5 +18,7 @@ Depends:
  ${misc:Depends},
  ${python3:Depends},
  ${shlibs:Depends},
+Provides:
+ ${python3:Provides},
 Description: Reader for the MaxMind DB format
  FIXME: Long description.
