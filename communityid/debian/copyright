@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: communityid
+Upstream-Contact: Christian Kreibich <christian@corelight.com>
+Source: https://github.com/corelight/pycommunityid
+
+Files: *
+Copyright: 2017-2022 by Corelight, Inc
+License: BSD-3
+
+Files: debian/*
+Copyright: 2022 Cyril Brulebois <cyril@debamax.com>
+License: BSD-3
