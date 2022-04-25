@@ -6,3 +6,8 @@ export PYBUILD_NAME=geoip2
 
 override_dh_auto_test:
 	@echo "Sorry: disabled test suite to avoid having to pull mocket."
+
+# Shipped in the tarball, modified after a build:
+override_dh_clean:
+	dh_clean
+	rm -rf geoip2.egg-info/
