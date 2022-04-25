@@ -1,0 +1,11 @@
+It looks like someone's pretending tests exist but they don't!
+--- a/setup.py
++++ b/setup.py
+@@ -18,7 +18,6 @@ setuptools.setup(
+         'scripts/community-id',
+         'scripts/community-id-pcap',
+         'scripts/community-id-tcpdump'],
+-    test_suite="tests.communityid_test",
+     classifiers=[
+         "Programming Language :: Python :: 3",
+         "License :: OSI Approved :: BSD License",
