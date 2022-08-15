@@ -1,11 +1,11 @@
---- a/setup.py
-+++ b/setup.py
-@@ -29,7 +29,7 @@ requires = (
-     # Android dependencies:
-     "adb-shell>=0.4.2",
-     "libusb1>=2.0.1",
--    "cryptography>=36.0.1"
-+    "cryptography"
- )
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -31,7 +31,7 @@ install_requires =
+ 	iOSbackup >=0.9.921
+ 	adb-shell >=0.4.3
+ 	libusb1 >=3.0.0
+-	cryptography >=37.0.4
++	cryptography
+ 	pyyaml >=6.0
  
- 
+ [options.packages.find]
