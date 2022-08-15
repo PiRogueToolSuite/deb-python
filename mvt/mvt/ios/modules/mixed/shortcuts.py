@@ -1,15 +1,16 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import io
 import itertools
+import logging
 import plistlib
 import sqlite3
+from typing import Union
 
-from mvt.common.utils import (check_for_links, convert_mactime_to_unix,
-                              convert_timestamp_to_iso)
+from mvt.common.utils import check_for_links, convert_mactime_to_iso
 
 from ..base import IOSExtraction
 
@@ -24,19 +25,22 @@ SHORTCUT_ROOT_PATHS = [
 class Shortcuts(IOSExtraction):
     """This module extracts all info about SMS/iMessage attachments."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
-    def serialize(self, record):
+    def serialize(self, record: dict) -> Union[dict, list]:
         found_urls = ""
         if record["action_urls"]:
-            found_urls = "- URLs in actions: {}".format(", ".join(record["action_urls"]))
+            found_urls = f"- URLs in actions: {', '.join(record['action_urls'])}"
+
         desc = ""
         if record["description"]:
-            desc = record["description"].decode('utf-8', errors='ignore')
+            desc = record["description"].decode("utf-8", errors="ignore")
 
         return [{
             "timestamp": record["isodate"],
@@ -50,7 +54,7 @@ class Shortcuts(IOSExtraction):
             "data": f"iOS Shortcut '{record['shortcut_name'].decode('utf-8')}': {desc} {found_urls}"
         }]
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
@@ -60,7 +64,7 @@ class Shortcuts(IOSExtraction):
                 result["matched_indicator"] = ioc
                 self.detected.append(result)
 
-    def run(self):
+    def run(self) -> None:
         self._find_ios_database(backup_ids=SHORTCUT_BACKUP_IDS,
                                 root_paths=SHORTCUT_ROOT_PATHS)
         self.log.info("Found Shortcuts database at path: %s", self.file_path)
@@ -109,8 +113,8 @@ class Shortcuts(IOSExtraction):
                 action["urls"] = [url.rstrip("',") for url in extracted_urls]
                 actions.append(action)
 
-            shortcut["isodate"] = convert_timestamp_to_iso(convert_mactime_to_unix(shortcut.pop("created_date")))
-            shortcut["modified_date"] = convert_timestamp_to_iso(convert_mactime_to_unix(shortcut["modified_date"]))
+            shortcut["isodate"] = convert_mactime_to_iso(shortcut.pop("created_date"))
+            shortcut["modified_date"] = convert_mactime_to_iso(shortcut["modified_date"])
             shortcut["parsed_actions"] = len(actions)
             shortcut["action_urls"] = list(itertools.chain(*[action["urls"] for action in actions]))
             self.results.append(shortcut)

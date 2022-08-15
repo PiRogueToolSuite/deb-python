@@ -1,11 +1,13 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
+import logging
 import sqlite3
+from typing import Union
 
-from mvt.common.utils import convert_mactime_to_unix, convert_timestamp_to_iso
+from mvt.common.utils import convert_mactime_to_iso
 
 from ..base import IOSExtraction
 
@@ -18,21 +20,24 @@ SAFARI_FAVICON_ROOT_PATHS = [
 class SafariFavicon(IOSExtraction):
     """This module extracts all Safari favicon records."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
-    def serialize(self, record):
+    def serialize(self, record: dict) -> Union[dict, list]:
         return {
             "timestamp": record["isodate"],
             "module": self.__class__.__name__,
             "event": "safari_favicon",
-            "data": f"Safari favicon from {record['url']} with icon URL {record['icon_url']} ({record['type']})",
+            "data": f"Safari favicon from {record['url']} with icon URL "
+                    f"{record['icon_url']} ({record['type']})",
         }
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
@@ -65,7 +70,7 @@ class SafariFavicon(IOSExtraction):
                 "url": row[0],
                 "icon_url": row[1],
                 "timestamp": row[2],
-                "isodate": convert_timestamp_to_iso(convert_mactime_to_unix(row[2])),
+                "isodate": convert_mactime_to_iso(row[2]),
                 "type": "valid",
                 "safari_favicon_db_path": file_path,
             })
@@ -84,7 +89,7 @@ class SafariFavicon(IOSExtraction):
                 "url": row[0],
                 "icon_url": row[1],
                 "timestamp": row[2],
-                "isodate": convert_timestamp_to_iso(convert_mactime_to_unix(row[2])),
+                "isodate": convert_mactime_to_iso(row[2]),
                 "type": "rejected",
                 "safari_favicon_db_path": file_path,
             })
@@ -92,10 +97,12 @@ class SafariFavicon(IOSExtraction):
         cur.close()
         conn.close()
 
-    def run(self):
+    def run(self) -> None:
         for file_path in self._get_fs_files_from_patterns(SAFARI_FAVICON_ROOT_PATHS):
-            self.log.info("Found Safari favicon cache database at path: %s", file_path)
+            self.log.info("Found Safari favicon cache database at path: %s",
+                          file_path)
             self._process_favicon_db(file_path)
 
-        self.log.info("Extracted a total of %d favicon records", len(self.results))
+        self.log.info("Extracted a total of %d favicon records",
+                      len(self.results))
         self.results = sorted(self.results, key=lambda x: x["isodate"])

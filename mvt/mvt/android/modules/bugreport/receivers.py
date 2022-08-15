@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -8,8 +8,6 @@ import logging
 from mvt.android.parsers import parse_dumpsys_receiver_resolver_table
 
 from .base import BugReportModule
-
-log = logging.getLogger(__name__)
 
 INTENT_NEW_OUTGOING_SMS = "android.provider.Telephony.NEW_OUTGOING_SMS"
 INTENT_SMS_RECEIVED = "android.provider.Telephony.SMS_RECEIVED"
@@ -21,46 +19,54 @@ INTENT_NEW_OUTGOING_CALL = "android.intent.action.NEW_OUTGOING_CALL"
 class Receivers(BugReportModule):
     """This module extracts details on receivers for risky activities."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 serial=None, fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
         self.results = results if results else {}
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
         for intent, receivers in self.results.items():
             for receiver in receivers:
                 if intent == INTENT_NEW_OUTGOING_SMS:
-                    self.log.info("Found a receiver to intercept outgoing SMS messages: \"%s\"",
+                    self.log.info("Found a receiver to intercept "
+                                  "outgoing SMS messages: \"%s\"",
                                   receiver["receiver"])
                 elif intent == INTENT_SMS_RECEIVED:
-                    self.log.info("Found a receiver to intercept incoming SMS messages: \"%s\"",
+                    self.log.info("Found a receiver to intercept "
+                                  "incoming SMS messages: \"%s\"",
                                   receiver["receiver"])
                 elif intent == INTENT_DATA_SMS_RECEIVED:
-                    self.log.info("Found a receiver to intercept incoming data SMS message: \"%s\"",
+                    self.log.info("Found a receiver to intercept "
+                                  "incoming data SMS message: \"%s\"",
                                   receiver["receiver"])
                 elif intent == INTENT_PHONE_STATE:
-                    self.log.info("Found a receiver monitoring telephony state/incoming calls: \"%s\"",
+                    self.log.info("Found a receiver monitoring "
+                                  "telephony state/incoming calls: \"%s\"",
                                   receiver["receiver"])
                 elif intent == INTENT_NEW_OUTGOING_CALL:
-                    self.log.info("Found a receiver monitoring outgoing calls: \"%s\"",
+                    self.log.info("Found a receiver monitoring "
+                                  "outgoing calls: \"%s\"",
                                   receiver["receiver"])
 
-            ioc = self.indicators.check_app_id(receiver["package_name"])
-            if ioc:
-                receiver["matched_indicator"] = ioc
-                self.detected.append({intent: receiver})
-                continue
+                ioc = self.indicators.check_app_id(receiver["package_name"])
+                if ioc:
+                    receiver["matched_indicator"] = ioc
+                    self.detected.append({intent: receiver})
+                    continue
 
-    def run(self):
+    def run(self) -> None:
         content = self._get_dumpstate_file()
         if not content:
-            self.log.error("Unable to find dumpstate file. Did you provide a valid bug report archive?")
+            self.log.error("Unable to find dumpstate file. Did you provide a "
+                           "valid bug report archive?")
             return
 
         in_receivers = False

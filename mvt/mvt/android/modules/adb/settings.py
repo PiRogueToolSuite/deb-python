@@ -1,14 +1,11 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import logging
 
 from .base import AndroidExtraction
-
-log = logging.getLogger(__name__)
-
 
 ANDROID_DANGEROUS_SETTINGS = [
     {
@@ -51,22 +48,29 @@ ANDROID_DANGEROUS_SETTINGS = [
         "key": "send_action_app_error",
         "safe_value": "1",
     },
+    {
+        "description": "enabled installation of non Google Play apps",
+        "key": "install_non_market_apps",
+        "safe_value": "0",
+    }
 ]
 
 
 class Settings(AndroidExtraction):
     """This module extracts Android system settings."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 serial=None, fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
         self.results = {} if not results else results
 
-    def check_indicators(self):
-        for namespace, settings in self.results.items():
+    def check_indicators(self) -> None:
+        for _, settings in self.results.items():
             for key, value in settings.items():
                 for danger in ANDROID_DANGEROUS_SETTINGS:
                     # Check if one of the dangerous settings is using an unsafe
@@ -76,7 +80,7 @@ class Settings(AndroidExtraction):
                                          key, value, danger["description"])
                         break
 
-    def run(self):
+    def run(self) -> None:
         self._adb_connect()
 
         for namespace in ["system", "secure", "global"]:

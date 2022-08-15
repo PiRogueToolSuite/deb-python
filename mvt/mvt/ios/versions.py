@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -239,22 +239,29 @@ IPHONE_IOS_VERSIONS = [
     {"build": "19D50", "version": "15.3"},
     {"build": "19D52", "version": "15.3.1"},
     {"build": "19E241", "version": "15.4"},
-    {"build": "19E258", "version": "15.4.1"}
+    {"build": "19E258", "version": "15.4.1"},
+    {"build": "19F77", "version": "15.5"},
+    {"build": "19G71", "version": "15.6"},
 ]
 
 
-def get_device_desc_from_id(identifier, devices_list=IPHONE_MODELS):
-    for model in IPHONE_MODELS:
+def get_device_desc_from_id(identifier: str,
+                            devices_list: list = IPHONE_MODELS) -> str:
+    for model in devices_list:
         if identifier == model["identifier"]:
             return model["description"]
 
+    return ""
 
-def find_version_by_build(build):
+
+def find_version_by_build(build: str) -> str:
     build = build.upper()
     for version in IPHONE_IOS_VERSIONS:
         if build == version["build"]:
             return version["version"]
 
+    return ""
 
-def latest_ios_version():
+
+def latest_ios_version() -> str:
     return IPHONE_IOS_VERSIONS[-1]

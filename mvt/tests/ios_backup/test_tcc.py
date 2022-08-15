@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -13,8 +13,9 @@ from ..utils import get_ios_backup_folder
 
 
 class TestTCCtModule:
+
     def test_tcc(self):
-        m = TCC(base_folder=get_ios_backup_folder(), log=logging, results=[])
+        m = TCC(target_path=get_ios_backup_folder())
         run_module(m)
         assert len(m.results) == 11
         assert len(m.timeline) == 11
@@ -24,8 +25,8 @@ class TestTCCtModule:
         assert m.results[0]["auth_value"] == "allowed"
 
     def test_tcc_detection(self, indicator_file):
-        m = TCC(base_folder=get_ios_backup_folder(), log=logging, results=[])
-        ind = Indicators(log=logging)
+        m = TCC(target_path=get_ios_backup_folder())
+        ind = Indicators(log=logging.getLogger())
         ind.parse_stix2(indicator_file)
         m.indicators = ind
         run_module(m)

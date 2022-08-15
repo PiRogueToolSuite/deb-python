@@ -1,57 +1,78 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import logging
 import re
+from typing import Union
+
+from mvt.android.modules.adb.packages import (DANGEROUS_PERMISSIONS,
+                                              DANGEROUS_PERMISSIONS_THRESHOLD,
+                                              ROOT_PACKAGES)
 
 from .base import BugReportModule
-
-log = logging.getLogger(__name__)
 
 
 class Packages(BugReportModule):
     """This module extracts details on receivers for risky activities."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 serial=None, fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
-    def serialize(self, record):
+    def serialize(self, record: dict) -> Union[dict, list]:
         records = []
 
         timestamps = [
-            {"event": "package_install", "timestamp": record["timestamp"]},
-            {"event": "package_first_install", "timestamp": record["first_install_time"]},
-            {"event": "package_last_update", "timestamp": record["last_update_time"]},
+            {
+                "event": "package_install",
+                "timestamp": record["timestamp"]
+            },
+            {
+                "event": "package_first_install",
+                "timestamp": record["first_install_time"]
+            },
+            {
+                "event": "package_last_update",
+                "timestamp": record["last_update_time"]
+            },
         ]
 
-        for ts in timestamps:
+        for timestamp in timestamps:
             records.append({
-                "timestamp": ts["timestamp"],
+                "timestamp": timestamp["timestamp"],
                 "module": self.__class__.__name__,
-                "event": ts["event"],
+                "event": timestamp["event"],
                 "data": f"Install or update of package {record['package_name']}",
             })
 
         return records
 
-    def check_indicators(self):
-        if not self.indicators:
-            return
-
+    def check_indicators(self) -> None:
         for result in self.results:
-            ioc = self.indicators.check_app_id(result["package_name"])
+            if result["package_name"] in ROOT_PACKAGES:
+                self.log.warning("Found an installed package related to "
+                                 "rooting/jailbreaking: \"%s\"",
+                                 result["package_name"])
+                self.detected.append(result)
+                continue
+
+            if not self.indicators:
+                continue
+
+            ioc = self.indicators.check_app_id(result.get("package_name"))
             if ioc:
                 result["matched_indicator"] = ioc
                 self.detected.append(result)
                 continue
 
     @staticmethod
-    def parse_package_for_details(output):
+    def parse_package_for_details(output: str) -> dict:
         details = {
             "uid": "",
             "version_name": "",
@@ -102,7 +123,7 @@ class Packages(BugReportModule):
 
         return details
 
-    def parse_packages_list(self, output):
+    def parse_packages_list(self, output: str) -> list:
         pkg_rxp = re.compile(r"  Package \[(.+?)\].*")
 
         results = []
@@ -133,10 +154,11 @@ class Packages(BugReportModule):
 
         return results
 
-    def run(self):
+    def run(self) -> None:
         content = self._get_dumpstate_file()
         if not content:
-            self.log.error("Unable to find dumpstate file. Did you provide a valid bug report archive?")
+            self.log.error("Unable to find dumpstate file. Did you provide a "
+                           "valid bug report archive?")
             return
 
         in_package = False
@@ -163,5 +185,16 @@ class Packages(BugReportModule):
             lines.append(line)
 
         self.results = self.parse_packages_list("\n".join(lines))
+
+        for result in self.results:
+            dangerous_permissions_count = 0
+            for perm in result["requested_permissions"]:
+                if perm in DANGEROUS_PERMISSIONS:
+                    dangerous_permissions_count += 1
+
+            if dangerous_permissions_count >= DANGEROUS_PERMISSIONS_THRESHOLD:
+                self.log.info("Found package \"%s\" requested %d potentially "
+                              "dangerous permissions", result["package_name"],
+                              dangerous_permissions_count)
 
         self.log.info("Extracted details on %d packages", len(self.results))

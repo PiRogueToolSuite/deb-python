@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -7,12 +7,11 @@ import base64
 import logging
 import os
 import sqlite3
+from typing import Union
 
-from mvt.common.utils import check_for_links, convert_timestamp_to_iso
+from mvt.common.utils import check_for_links, convert_unix_to_iso
 
 from .base import AndroidExtraction
-
-log = logging.getLogger(__name__)
 
 WHATSAPP_PATH = "data/data/com.whatsapp/databases/msgstore.db"
 
@@ -20,13 +19,15 @@ WHATSAPP_PATH = "data/data/com.whatsapp/databases/msgstore.db"
 class Whatsapp(AndroidExtraction):
     """This module extracts all WhatsApp messages containing links."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 serial=None, fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
-    def serialize(self, record):
+    def serialize(self, record: dict) -> Union[dict, list]:
         text = record["data"].replace("\n", "\\n")
         return {
             "timestamp": record["isodate"],
@@ -35,7 +36,7 @@ class Whatsapp(AndroidExtraction):
             "data": f"\"{text}\""
         }
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
@@ -47,7 +48,7 @@ class Whatsapp(AndroidExtraction):
             if self.indicators.check_domains(message_links):
                 self.detected.append(message)
 
-    def _parse_db(self, db_path):
+    def _parse_db(self, db_path: str) -> None:
         """Parse an Android msgstore.db WhatsApp database file.
 
         :param db_path: Path to the Android WhatsApp database file to process
@@ -70,22 +71,30 @@ class Whatsapp(AndroidExtraction):
                 continue
 
             message["direction"] = ("send" if message["key_from_me"] == 1 else "received")
-            message["isodate"] = convert_timestamp_to_iso(message["timestamp"])
+            message["isodate"] = convert_unix_to_iso(message["timestamp"])
 
-            # If we find links in the messages or if they are empty we add them to the list.
+            # If we find links in the messages or if they are empty we add them
+            # to the list.
             if check_for_links(message["data"]) or message["data"].strip() == "":
-                if (message.get('thumb_image') is not None):
-                    message['thumb_image'] = base64.b64encode(message['thumb_image'])
+                if message.get("thumb_image"):
+                    message["thumb_image"] = base64.b64encode(message["thumb_image"])
+
                 messages.append(message)
 
         cur.close()
         conn.close()
 
-        log.info("Extracted a total of %d WhatsApp messages containing links", len(messages))
+        self.log.info("Extracted a total of %d WhatsApp messages "
+                      "containing links", len(messages))
         self.results = messages
 
-    def run(self):
+    def run(self) -> None:
+        self._adb_connect()
+
         try:
-            self._adb_process_file(os.path.join("/", WHATSAPP_PATH), self._parse_db)
-        except Exception as e:
-            self.log.error(e)
+            self._adb_process_file(os.path.join("/", WHATSAPP_PATH),
+                                                self._parse_db)
+        except Exception as exc:
+            self.log.error(exc)
+
+        self._adb_disconnect()

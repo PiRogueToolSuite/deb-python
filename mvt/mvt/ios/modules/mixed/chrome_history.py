@@ -1,12 +1,14 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
+import logging
 import sqlite3
+from typing import Union
 
-from mvt.common.utils import (convert_chrometime_to_unix,
-                              convert_timestamp_to_iso)
+from mvt.common.utils import (convert_chrometime_to_datetime,
+                              convert_datetime_to_iso)
 
 from ..base import IOSExtraction
 
@@ -22,21 +24,25 @@ CHROME_HISTORY_ROOT_PATHS = [
 class ChromeHistory(IOSExtraction):
     """This module extracts all Chome visits."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
-    def serialize(self, record):
+    def serialize(self, record: dict) -> Union[dict, list]:
         return {
             "timestamp": record["isodate"],
             "module": self.__class__.__name__,
             "event": "visit",
-            "data": f"{record['id']} - {record['url']} (visit ID: {record['visit_id']}, redirect source: {record['redirect_source']})"
+            "data": f"{record['id']} - {record['url']} "
+                    f"(visit ID: {record['visit_id']}, "
+                    f"redirect source: {record['redirect_source']})"
         }
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
@@ -46,10 +52,11 @@ class ChromeHistory(IOSExtraction):
                 result["matched_indicator"] = ioc
                 self.detected.append(result)
 
-    def run(self):
+    def run(self) -> None:
         self._find_ios_database(backup_ids=CHROME_HISTORY_BACKUP_IDS,
                                 root_paths=CHROME_HISTORY_ROOT_PATHS)
-        self.log.info("Found Chrome history database at path: %s", self.file_path)
+        self.log.info("Found Chrome history database at path: %s",
+                      self.file_path)
 
         conn = sqlite3.connect(self.file_path)
         cur = conn.cursor()
@@ -71,11 +78,12 @@ class ChromeHistory(IOSExtraction):
                 "url": item[1],
                 "visit_id": item[2],
                 "timestamp": item[3],
-                "isodate": convert_timestamp_to_iso(convert_chrometime_to_unix(item[3])),
+                "isodate": convert_datetime_to_iso(convert_chrometime_to_datetime(item[3])),
                 "redirect_source": item[4],
             })
 
         cur.close()
         conn.close()
 
-        self.log.info("Extracted a total of %d history items", len(self.results))
+        self.log.info("Extracted a total of %d history items",
+                      len(self.results))

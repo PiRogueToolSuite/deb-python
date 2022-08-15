@@ -1,15 +1,15 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import re
 from datetime import datetime
 
-from mvt.common.utils import convert_timestamp_to_iso
+from mvt.common.utils import convert_datetime_to_iso
 
 
-def parse_dumpsys_accessibility(output):
+def parse_dumpsys_accessibility(output: str) -> list:
     results = []
 
     in_services = False
@@ -34,7 +34,7 @@ def parse_dumpsys_accessibility(output):
     return results
 
 
-def parse_dumpsys_activity_resolver_table(output):
+def parse_dumpsys_activity_resolver_table(output: str) -> dict:
     results = {}
 
     in_activity_resolver_table = False
@@ -61,7 +61,8 @@ def parse_dumpsys_activity_resolver_table(output):
             break
 
         # We detect the action name.
-        if line.startswith(" " * 6) and not line.startswith(" " * 8) and ":" in line:
+        if (line.startswith(" " * 6) and not line.startswith(" " * 8)
+                and ":" in line):
             intent = line.strip().replace(":", "")
             results[intent] = []
             continue
@@ -90,7 +91,7 @@ def parse_dumpsys_activity_resolver_table(output):
     return results
 
 
-def parse_dumpsys_battery_daily(output):
+def parse_dumpsys_battery_daily(output: str) -> list:
     results = []
     daily = None
     daily_updates = []
@@ -117,7 +118,8 @@ def parse_dumpsys_battery_daily(output):
 
         already_seen = False
         for update in daily_updates:
-            if package_name == update["package_name"] and vers_nr == update["vers"]:
+            if (package_name == update["package_name"]
+                    and vers_nr == update["vers"]):
                 already_seen = True
                 break
 
@@ -136,7 +138,7 @@ def parse_dumpsys_battery_daily(output):
     return results
 
 
-def parse_dumpsys_battery_history(output):
+def parse_dumpsys_battery_history(output: str) -> list:
     results = []
 
     for line in output.splitlines():
@@ -181,7 +183,7 @@ def parse_dumpsys_battery_history(output):
     return results
 
 
-def parse_dumpsys_dbinfo(output):
+def parse_dumpsys_dbinfo(output: str) -> list:
     results = []
 
     rxp = re.compile(r'.*\[([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3})\].*\[Pid:\((\d+)\)\](\w+).*sql\=\"(.+?)\"')
@@ -213,14 +215,14 @@ def parse_dumpsys_dbinfo(output):
             matches = rxp_no_pid.findall(line)
             if not matches:
                 continue
-            else:
-                match = matches[0]
-                results.append({
-                    "isodate": match[0],
-                    "action": match[1],
-                    "sql": match[2],
-                    "path": pool,
-                })
+
+            match = matches[0]
+            results.append({
+                "isodate": match[0],
+                "action": match[1],
+                "sql": match[2],
+                "path": pool,
+            })
         else:
             match = matches[0]
             results.append({
@@ -234,7 +236,7 @@ def parse_dumpsys_dbinfo(output):
     return results
 
 
-def parse_dumpsys_receiver_resolver_table(output):
+def parse_dumpsys_receiver_resolver_table(output: str) -> dict:
     results = {}
 
     in_receiver_resolver_table = False
@@ -261,7 +263,8 @@ def parse_dumpsys_receiver_resolver_table(output):
             break
 
         # We detect the action name.
-        if line.startswith(" " * 6) and not line.startswith(" " * 8) and ":" in line:
+        if (line.startswith(" " * 6) and not line.startswith(" " * 8)
+                and ":" in line):
             intent = line.strip().replace(":", "")
             results[intent] = []
             continue
@@ -290,7 +293,7 @@ def parse_dumpsys_receiver_resolver_table(output):
     return results
 
 
-def parse_dumpsys_appops(output):
+def parse_dumpsys_appops(output: str) -> list:
     results = []
     perm = {}
     package = {}
@@ -354,7 +357,7 @@ def parse_dumpsys_appops(output):
             entry["type"] = line[line.find("[")+1:line.find("]")]
 
             try:
-                entry["timestamp"] = convert_timestamp_to_iso(
+                entry["timestamp"] = convert_datetime_to_iso(
                     datetime.strptime(
                         line[line.find("]")+1:line.find("(")].strip(),
                         "%Y-%m-%d %H:%M:%S.%f"))

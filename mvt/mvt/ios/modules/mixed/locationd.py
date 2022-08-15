@@ -1,11 +1,13 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
+import logging
 import plistlib
+from typing import Union
 
-from mvt.common.utils import convert_mactime_to_unix, convert_timestamp_to_iso
+from mvt.common.utils import convert_mactime_to_iso
 
 from ..base import IOSExtraction
 
@@ -21,10 +23,12 @@ LOCATIOND_ROOT_PATHS = [
 class LocationdClients(IOSExtraction):
     """Extract information from apps who used geolocation."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
         self.timestamps = [
@@ -39,7 +43,7 @@ class LocationdClients(IOSExtraction):
             "BeaconRegionTimeStopped",
         ]
 
-    def serialize(self, record):
+    def serialize(self, record: dict) -> Union[dict, list]:
         records = []
         for timestamp in self.timestamps:
             if timestamp in record.keys():
@@ -52,7 +56,7 @@ class LocationdClients(IOSExtraction):
 
         return records
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
@@ -62,8 +66,8 @@ class LocationdClients(IOSExtraction):
 
             ioc = self.indicators.check_process(proc_name)
             if ioc:
-                self.log.warning("Found a suspicious process name in LocationD entry %s",
-                                 result["package"])
+                self.log.warning("Found a suspicious process name in "
+                                 "LocationD entry %s", result["package"])
                 result["matched_indicator"] = ioc
                 self.detected.append(result)
                 continue
@@ -71,8 +75,8 @@ class LocationdClients(IOSExtraction):
             if "BundlePath" in result:
                 ioc = self.indicators.check_file_path(result["BundlePath"])
                 if ioc:
-                    self.log.warning("Found a suspicious file path in Location D: %s",
-                                     result["BundlePath"])
+                    self.log.warning("Found a suspicious file path in "
+                                     "Location D: %s", result["BundlePath"])
                     result["matched_indicator"] = ioc
                     self.detected.append(result)
                     continue
@@ -80,8 +84,8 @@ class LocationdClients(IOSExtraction):
             if "Executable" in result:
                 ioc = self.indicators.check_file_path(result["Executable"])
                 if ioc:
-                    self.log.warning("Found a suspicious file path in Location D: %s",
-                                     result["Executable"])
+                    self.log.warning("Found a suspicious file path in "
+                                     "Location D: %s", result["Executable"])
                     result["matched_indicator"] = ioc
                     self.detected.append(result)
                     continue
@@ -89,8 +93,8 @@ class LocationdClients(IOSExtraction):
             if "Registered" in result:
                 ioc = self.indicators.check_file_path(result["Registered"])
                 if ioc:
-                    self.log.warning("Found a suspicious file path in Location D: %s",
-                                     result["Registered"])
+                    self.log.warning("Found a suspicious file path in "
+                                     "Location D: %s", result["Registered"])
                     result["matched_indicator"] = ioc
                     self.detected.append(result)
                     continue
@@ -99,25 +103,27 @@ class LocationdClients(IOSExtraction):
         with open(file_path, "rb") as handle:
             file_plist = plistlib.load(handle)
 
-        for key, values in file_plist.items():
+        for key, _ in file_plist.items():
             result = file_plist[key]
             result["package"] = key
-            for ts in self.timestamps:
-                if ts in result.keys():
-                    result[ts] = convert_timestamp_to_iso(convert_mactime_to_unix(result[ts]))
+            for timestamp in self.timestamps:
+                if timestamp in result.keys():
+                    result[timestamp] = convert_mactime_to_iso(result[timestamp])
 
             self.results.append(result)
 
-    def run(self):
-
+    def run(self) -> None:
         if self.is_backup:
             self._find_ios_database(backup_ids=LOCATIOND_BACKUP_IDS)
-            self.log.info("Found Locationd Clients plist at path: %s", self.file_path)
+            self.log.info("Found Locationd Clients plist at path: %s",
+                          self.file_path)
             self._extract_locationd_entries(self.file_path)
         elif self.is_fs_dump:
             for locationd_path in self._get_fs_files_from_patterns(LOCATIOND_ROOT_PATHS):
                 self.file_path = locationd_path
-                self.log.info("Found Locationd Clients plist at path: %s", self.file_path)
+                self.log.info("Found Locationd Clients plist at path: %s",
+                              self.file_path)
                 self._extract_locationd_entries(self.file_path)
 
-        self.log.info("Extracted a total of %d Locationd Clients entries", len(self.results))
+        self.log.info("Extracted a total of %d Locationd Clients entries",
+                      len(self.results))

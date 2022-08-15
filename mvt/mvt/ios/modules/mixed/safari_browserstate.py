@@ -1,15 +1,16 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import io
+import logging
 import os
 import plistlib
 import sqlite3
+from typing import Union
 
-from mvt.common.utils import (convert_mactime_to_unix,
-                              convert_timestamp_to_iso, keys_bytes_to_string)
+from mvt.common.utils import convert_mactime_to_iso, keys_bytes_to_string
 
 from ..base import IOSExtraction
 
@@ -23,15 +24,17 @@ SAFARI_BROWSER_STATE_ROOT_PATHS = [
 class SafariBrowserState(IOSExtraction):
     """This module extracts all Safari browser state records."""
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
         self._session_history_count = 0
 
-    def serialize(self, record):
+    def serialize(self, record: dict) -> Union[dict, list]:
         return {
             "timestamp": record["last_viewed_timestamp"],
             "module": self.__class__.__name__,
@@ -39,7 +42,7 @@ class SafariBrowserState(IOSExtraction):
             "data": f"{record['tab_title']} - {record['tab_url']}"
         }
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
@@ -113,22 +116,28 @@ class SafariBrowserState(IOSExtraction):
                 "tab_title": row[0],
                 "tab_url": row[1],
                 "tab_visible_url": row[2],
-                "last_viewed_timestamp": convert_timestamp_to_iso(convert_mactime_to_unix(row[3])),
+                "last_viewed_timestamp": convert_mactime_to_iso(row[3]),
                 "session_data": session_entries,
-                "safari_browser_state_db": os.path.relpath(db_path, self.base_folder),
+                "safari_browser_state_db": os.path.relpath(db_path,
+                                                           self.target_path),
             })
 
-    def run(self):
+    def run(self) -> None:
         if self.is_backup:
             for backup_file in self._get_backup_files_from_manifest(relative_path=SAFARI_BROWSER_STATE_BACKUP_RELPATH):
-                self.file_path = self._get_backup_file_from_id(backup_file["file_id"])
-                self.log.info("Found Safari browser state database at path: %s", self.file_path)
-                self._process_browser_state_db(self.file_path)
-        elif self.is_fs_dump:
-            for safari_browserstate_path in self._get_fs_files_from_patterns(SAFARI_BROWSER_STATE_ROOT_PATHS):
-                self.file_path = safari_browserstate_path
-                self.log.info("Found Safari browser state database at path: %s", self.file_path)
-                self._process_browser_state_db(self.file_path)
+                browserstate_path = self._get_backup_file_from_id(backup_file["file_id"])
+                if not browserstate_path:
+                    continue
 
-        self.log.info("Extracted a total of %d tab records and %d session history entries",
-                      len(self.results), self._session_history_count)
+                self.log.info("Found Safari browser state database at path: %s",
+                              browserstate_path)
+                self._process_browser_state_db(browserstate_path)
+        elif self.is_fs_dump:
+            for browserstate_path in self._get_fs_files_from_patterns(SAFARI_BROWSER_STATE_ROOT_PATHS):
+                self.log.info("Found Safari browser state database at path: %s",
+                              browserstate_path)
+                self._process_browser_state_db(browserstate_path)
+
+        self.log.info("Extracted a total of %d tab records and %d session "
+                      "history entries", len(self.results),
+                      self._session_history_count)

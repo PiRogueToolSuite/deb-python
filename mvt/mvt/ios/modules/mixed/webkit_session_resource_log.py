@@ -1,12 +1,13 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 The MVT Project Authors.
+# Copyright (c) 2021-2022 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
+import logging
 import os
 import plistlib
 
-from mvt.common.utils import convert_timestamp_to_iso
+from mvt.common.utils import convert_datetime_to_iso
 
 from ..base import IOSExtraction
 
@@ -29,10 +30,12 @@ class WebkitSessionResourceLog(IOSExtraction):
 
     """
 
-    def __init__(self, file_path=None, base_folder=None, output_folder=None,
-                 fast_mode=False, log=None, results=[]):
-        super().__init__(file_path=file_path, base_folder=base_folder,
-                         output_folder=output_folder, fast_mode=fast_mode,
+    def __init__(self, file_path: str = None, target_path: str = None,
+                 results_path: str = None, fast_mode: bool = False,
+                 log: logging.Logger = logging.getLogger(__name__),
+                 results: list = []) -> None:
+        super().__init__(file_path=file_path, target_path=target_path,
+                         results_path=results_path, fast_mode=fast_mode,
                          log=log, results=results)
 
         self.results = {} if not results else results
@@ -51,11 +54,11 @@ class WebkitSessionResourceLog(IOSExtraction):
 
         return domains
 
-    def check_indicators(self):
+    def check_indicators(self) -> None:
         if not self.indicators:
             return
 
-        for key, entries in self.results.items():
+        for _, entries in self.results.items():
             for entry in entries:
                 source_domains = self._extract_domains(entry["redirect_source"])
                 destination_domains = self._extract_domains(entry["redirect_destination"])
@@ -90,7 +93,8 @@ class WebkitSessionResourceLog(IOSExtraction):
 
                         redirect_path += ", ".join(destination_domains)
 
-                    self.log.warning("Found HTTP redirect between suspicious domains: %s", redirect_path)
+                    self.log.warning("Found HTTP redirect between suspicious "
+                                     "domains: %s", redirect_path)
 
     def _extract_browsing_stats(self, log_path):
         items = []
@@ -111,25 +115,28 @@ class WebkitSessionResourceLog(IOSExtraction):
                 "subframe_under_origin": item.get("subframeUnderTopFrameOrigins", ""),
                 "subresource_under_origin": item.get("subresourceUnderTopFrameOrigins", ""),
                 "user_interaction": item.get("hadUserInteraction"),
-                "most_recent_interaction": convert_timestamp_to_iso(item["mostRecentUserInteraction"]),
-                "last_seen": convert_timestamp_to_iso(item["lastSeen"]),
+                "most_recent_interaction": convert_datetime_to_iso(item["mostRecentUserInteraction"]),
+                "last_seen": convert_datetime_to_iso(item["lastSeen"]),
             })
 
         return items
 
-    def run(self):
+    def run(self) -> None:
         if self.is_backup:
             for log_file in self._get_backup_files_from_manifest(relative_path=WEBKIT_SESSION_RESOURCE_LOG_BACKUP_RELPATH):
                 log_path = self._get_backup_file_from_id(log_file["file_id"])
                 if not log_path:
                     continue
-                self.log.info("Found Safari browsing session resource log at path: %s", log_path)
+
+                self.log.info("Found Safari browsing session resource log at "
+                              "path: %s", log_path)
                 self.results[log_path] = self._extract_browsing_stats(log_path)
         elif self.is_fs_dump:
             for log_path in self._get_fs_files_from_patterns(WEBKIT_SESSION_RESOURCE_LOG_ROOT_PATHS):
-                self.log.info("Found Safari browsing session resource log at path: %s", log_path)
-                key = os.path.relpath(log_path, self.base_folder)
+                self.log.info("Found Safari browsing session resource log at "
+                              "path: %s", log_path)
+                key = os.path.relpath(log_path, self.target_path)
                 self.results[key] = self._extract_browsing_stats(log_path)
 
-        self.log.info("Extracted records from %d Safari browsing session resource logs",
-                      len(self.results))
+        self.log.info("Extracted records from %d Safari browsing session "
+                      "resource logs", len(self.results))
