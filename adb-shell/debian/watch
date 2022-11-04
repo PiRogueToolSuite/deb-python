@@ -1,4 +1,4 @@
 # try also https://pypi.debian.net/adb-shell/watch
 version=3
 opts=uversionmangle=s/(rc|a|b|c)/~$1/ \
-https://pypi.debian.net/adb-shell/adb-shell-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
+https://pypi.debian.net/adb-shell/adb_shell-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
