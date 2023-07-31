@@ -1,0 +1,32 @@
+Source: ahocorasick
+Section: python
+Priority: optional
+Maintainer: Cyril Brulebois <cyril@debamax.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all-dev,
+               python3-setuptools,
+               python3-sphinx,
+Standards-Version: 4.6.2.0
+Testsuite: autopkgtest-pkg-pybuild
+Homepage: http://github.com/WojciechMula/pyahocorasick
+Rules-Requires-Root: no
+
+Package: python3-ahocorasick
+Architecture: any
+Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends},
+Description: library for exact or approximate multi-pattern string
+ pyahocorasick is a fast and memory efficient library for exact or
+ approximate multi-pattern string search meaning that you can find
+ multiple key strings occurrences at once in some input text. The
+ strings “index” can be built ahead of time and saved (as a pickle) to
+ disk to reload and reuse later. The library provides an ahocorasick
+ Python module that you can use as a plain dict-like Trie or convert
+ a Trie to an automaton for efficient Aho-Corasick search.
+
+Package: python3-ahocorasick-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Description: documentation for the pyahocorasick Python library
+ This package provides documentation for pyahocorasick.
