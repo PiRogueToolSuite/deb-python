@@ -1,28 +1,42 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import logging
 import os
+from typing import Optional
 
 from mvt.common.command import Command
+from mvt.common.utils import exec_or_profile
 
 log = logging.getLogger(__name__)
 
 
 class CmdCheckIOCS(Command):
-
-    def __init__(self, target_path: str = None, results_path: str = None,
-                 ioc_files: list = [], module_name: str = None,
-                 serial: str = None, fast_mode: bool = False):
-        super().__init__(target_path=target_path, results_path=results_path,
-                         ioc_files=ioc_files, module_name=module_name,
-                         serial=serial, fast_mode=fast_mode, log=log)
+    def __init__(
+        self,
+        target_path: Optional[str] = None,
+        results_path: Optional[str] = None,
+        ioc_files: Optional[list] = None,
+        module_name: Optional[str] = None,
+        serial: Optional[str] = None,
+        module_options: Optional[dict] = None,
+    ) -> None:
+        super().__init__(
+            target_path=target_path,
+            results_path=results_path,
+            ioc_files=ioc_files,
+            module_name=module_name,
+            serial=serial,
+            module_options=module_options,
+            log=log,
+        )
 
         self.name = "check-iocs"
 
     def run(self) -> None:
+        assert self.target_path is not None
         all_modules = []
         for entry in self.modules:
             if entry not in all_modules:
@@ -42,22 +56,27 @@ class CmdCheckIOCS(Command):
                 if iocs_module().get_slug() != name_only:
                     continue
 
-                log.info("Loading results from \"%s\" with module %s", file_name,
-                         iocs_module.__name__)
+                log.info(
+                    'Loading results from "%s" with module %s',
+                    file_name,
+                    iocs_module.__name__,
+                )
 
-                m = iocs_module.from_json(file_path,
-                                          log=logging.getLogger(iocs_module.__module__))
+                m = iocs_module.from_json(
+                    file_path, log=logging.getLogger(iocs_module.__module__)
+                )
                 if self.iocs.total_ioc_count > 0:
                     m.indicators = self.iocs
                     m.indicators.log = m.log
 
                 try:
-                    m.check_indicators()
+                    exec_or_profile("m.check_indicators()", globals(), locals())
                 except NotImplementedError:
                     continue
                 else:
                     total_detections += len(m.detected)
 
         if total_detections > 0:
-            log.warning("The check of the results produced %d detections!",
-                        total_detections)
+            log.warning(
+                "The check of the results produced %d detections!", total_detections
+            )

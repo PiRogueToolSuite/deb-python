@@ -1,11 +1,12 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # See the file 'LICENSE' for usage and copying permissions, or find a copy at
 #   https://github.com/mvt-project/mvt/blob/main/LICENSE
 
 import fnmatch
 import logging
 import os
+from typing import List, Optional
 from zipfile import ZipFile
 
 from mvt.common.module import MVTModule
@@ -14,24 +15,36 @@ from mvt.common.module import MVTModule
 class BugReportModule(MVTModule):
     """This class provides a base for all Android Bug Report modules."""
 
-    def __init__(self, file_path: str = None, target_path: str = None,
-                 results_path: str = None, fast_mode: bool = False,
-                 log: logging.Logger = logging.getLogger(__name__),
-                 results: list = []) -> None:
-        super().__init__(file_path=file_path, target_path=target_path,
-                         results_path=results_path, fast_mode=fast_mode,
-                         log=log, results=results)
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        target_path: Optional[str] = None,
+        results_path: Optional[str] = None,
+        module_options: Optional[dict] = None,
+        log: logging.Logger = logging.getLogger(__name__),
+        results: Optional[list] = None,
+    ) -> None:
+        super().__init__(
+            file_path=file_path,
+            target_path=target_path,
+            results_path=results_path,
+            module_options=module_options,
+            log=log,
+            results=results,
+        )
 
-        self.zip_archive = None
-        self.extract_path = None
-        self.extract_files = []
-        self.zip_files = []
+        self.zip_archive: Optional[ZipFile] = None
+        self.extract_path: Optional[str] = None
+        self.extract_files: List[str] = []
+        self.zip_files: List[str] = []
 
-    def from_folder(self, extract_path: str, extract_files: str) -> None:
+    def from_folder(
+        self, extract_path: Optional[str], extract_files: List[str]
+    ) -> None:
         self.extract_path = extract_path
         self.extract_files = extract_files
 
-    def from_zip(self, zip_archive: ZipFile, zip_files: list) -> None:
+    def from_zip(self, zip_archive: Optional[ZipFile], zip_files: List[str]) -> None:
         self.zip_archive = zip_archive
         self.zip_files = zip_files
 
@@ -50,6 +63,8 @@ class BugReportModule(MVTModule):
             matches = self._get_files_by_pattern(pattern)
             if matches:
                 return matches
+
+        return []
 
     def _get_file_content(self, file_path: str) -> bytes:
         if self.zip_archive:

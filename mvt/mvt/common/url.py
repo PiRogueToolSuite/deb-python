@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -254,7 +254,6 @@ SHORTENER_DOMAINS = [
 
 
 class URL:
-
     def __init__(self, url: str) -> None:
         if isinstance(url, bytes):
             url = url.decode()
@@ -264,7 +263,7 @@ class URL:
         self.top_level = self.get_top_level()
         self.is_shortened = False
 
-    def get_domain(self) -> None:
+    def get_domain(self) -> str:
         """Get the domain from a URL.
 
         :param url: URL to parse
@@ -273,15 +272,13 @@ class URL:
         :rtype: str
 
         """
-        # TODO: Properly handle exception.
-        try:
-            return get_tld(self.url,
-                           as_object=True,
-                           fix_protocol=True).parsed_url.netloc.lower().lstrip("www.")
-        except Exception:
-            return None
+        return (
+            get_tld(self.url, as_object=True, fix_protocol=True)
+            .parsed_url.netloc.lower()
+            .lstrip("www.")
+        )
 
-    def get_top_level(self) -> None:
+    def get_top_level(self) -> str:
         """Get only the top-level domain from a URL.
 
         :param url: URL to parse
@@ -290,11 +287,7 @@ class URL:
         :rtype: str
 
         """
-        # TODO: Properly handle exception.
-        try:
-            return get_tld(self.url, as_object=True, fix_protocol=True).fld.lower()
-        except Exception:
-            return None
+        return get_tld(self.url, as_object=True, fix_protocol=True).fld.lower()
 
     def check_if_shortened(self) -> bool:
         """Check if the URL is among list of shortener services.

@@ -1,8 +1,10 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
+from .applications import Applications
+from .calendar import Calendar
 from .calls import Calls
 from .chrome_favicon import ChromeFavicon
 from .chrome_history import ChromeHistory
@@ -24,8 +26,27 @@ from .webkit_resource_load_statistics import WebkitResourceLoadStatistics
 from .webkit_session_resource_log import WebkitSessionResourceLog
 from .whatsapp import Whatsapp
 
-MIXED_MODULES = [Calls, ChromeFavicon, ChromeHistory, Contacts, FirefoxFavicon,
-                 FirefoxHistory, IDStatusCache, InteractionC, LocationdClients,
-                 OSAnalyticsADDaily, Datausage, SafariBrowserState, SafariHistory,
-                 TCC, SMS, SMSAttachments, WebkitResourceLoadStatistics,
-                 WebkitSessionResourceLog, Whatsapp, Shortcuts]
+MIXED_MODULES = [
+    Calls,
+    ChromeFavicon,
+    ChromeHistory,
+    Contacts,
+    FirefoxFavicon,
+    FirefoxHistory,
+    IDStatusCache,
+    InteractionC,
+    LocationdClients,
+    OSAnalyticsADDaily,
+    Datausage,
+    SafariBrowserState,
+    SafariHistory,
+    TCC,
+    SMS,
+    SMSAttachments,
+    WebkitResourceLoadStatistics,
+    WebkitSessionResourceLog,
+    Whatsapp,
+    Shortcuts,
+    Applications,
+    Calendar,
+]

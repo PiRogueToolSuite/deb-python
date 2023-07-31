@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -11,6 +11,7 @@ import os
 import os.path
 import shutil
 import sqlite3
+from typing import Optional
 
 from iOSbackup import iOSbackup
 
@@ -24,7 +25,7 @@ class DecryptBackup:
 
     """
 
-    def __init__(self, backup_path: str, dest_path: str = None) -> None:
+    def __init__(self, backup_path: str, dest_path: Optional[str] = None) -> None:
         """Decrypts an encrypted iOS backup.
         :param backup_path: Path to the encrypted backup folder
         :param dest_path: Path to the folder where to store the decrypted backup
@@ -54,13 +55,19 @@ class DecryptBackup:
             log.critical("The backup does not seem encrypted!")
             return False
 
-    def _process_file(self, relative_path: str, domain: str, item,
-                      file_id: str, item_folder: str) -> None:
-        self._backup.getFileDecryptedCopy(manifestEntry=item,
-                                          targetName=file_id,
-                                          targetFolder=item_folder)
-        log.info("Decrypted file %s [%s] to %s/%s", relative_path, domain,
-                 item_folder, file_id)
+    def _process_file(
+        self, relative_path: str, domain: str, item, file_id: str, item_folder: str
+    ) -> None:
+        self._backup.getFileDecryptedCopy(
+            manifestEntry=item, targetName=file_id, targetFolder=item_folder
+        )
+        log.info(
+            "Decrypted file %s [%s] to %s/%s",
+            relative_path,
+            domain,
+            item_folder,
+            file_id,
+        )
 
     def process_backup(self) -> None:
         if not os.path.exists(self.dest_path):
@@ -82,26 +89,27 @@ class DecryptBackup:
 
                 # This may be a partial backup. Skip files from the manifest
                 # which do not exist locally.
-                source_file_path = os.path.join(self.backup_path, file_id[0:2],
-                                                file_id)
+                source_file_path = os.path.join(self.backup_path, file_id[0:2], file_id)
                 if not os.path.exists(source_file_path):
-                    log.debug("Skipping file %s. File not found in encrypted backup directory.",
-                              source_file_path)
+                    log.debug(
+                        "Skipping file %s. File not found in encrypted backup directory.",
+                        source_file_path,
+                    )
                     continue
 
                 item_folder = os.path.join(self.dest_path, file_id[0:2])
                 if not os.path.exists(item_folder):
                     os.makedirs(item_folder)
 
-                # iOSBackup getFileDecryptedCopy() claims to read a "file" parameter
-                # but the code actually is reading the "manifest" key.
+                # iOSBackup getFileDecryptedCopy() claims to read a "file"
+                # parameter but the code actually is reading the "manifest" key.
                 # Add manifest plist to both keys to handle this.
                 item["manifest"] = item["file"]
 
-                pool.apply_async(self._process_file, args=(relative_path,
-                                                           domain, item,
-                                                           file_id,
-                                                           item_folder))
+                pool.apply_async(
+                    self._process_file,
+                    args=(relative_path, domain, item, file_id, item_folder),
+                )
             except Exception as exc:
                 log.error("Failed to decrypt file %s: %s", relative_path, exc)
 
@@ -112,8 +120,7 @@ class DecryptBackup:
         for file_name in os.listdir(self.backup_path):
             if file_name.endswith(".plist"):
                 log.info("Copied plist file %s to %s", file_name, self.dest_path)
-                shutil.copy(os.path.join(self.backup_path, file_name),
-                            self.dest_path)
+                shutil.copy(os.path.join(self.backup_path, file_name), self.dest_path)
 
     def decrypt_with_password(self, password: str) -> None:
         """Decrypts an encrypted iOS backup.
@@ -125,15 +132,22 @@ class DecryptBackup:
 
         if not os.path.exists(os.path.join(self.backup_path, "Manifest.plist")):
             possible = glob.glob(os.path.join(self.backup_path, "*", "Manifest.plist"))
+
             if len(possible) == 1:
                 newpath = os.path.dirname(possible[0])
-                log.warning("No Manifest.plist in %s, using %s instead.",
-                            self.backup_path, newpath)
+                log.warning(
+                    "No Manifest.plist in %s, using %s instead.",
+                    self.backup_path,
+                    newpath,
+                )
                 self.backup_path = newpath
             elif len(possible) > 1:
-                log.critical("No Manifest.plist in %s, and %d Manifest.plist "
-                             "files in subdirs. Please choose one!",
-                             self.backup_path, len(possible))
+                log.critical(
+                    "No Manifest.plist in %s, and %d Manifest.plist files in subdirs. "
+                    "Please choose one!",
+                    self.backup_path,
+                    len(possible),
+                )
                 return
 
         # Before proceeding, we check whether the backup is indeed encrypted.
@@ -141,22 +155,33 @@ class DecryptBackup:
             return
 
         try:
-            self._backup = iOSbackup(udid=os.path.basename(self.backup_path),
-                                     cleartextpassword=password,
-                                     backuproot=os.path.dirname(self.backup_path))
+            self._backup = iOSbackup(
+                udid=os.path.basename(self.backup_path),
+                cleartextpassword=password,
+                backuproot=os.path.dirname(self.backup_path),
+            )
         except Exception as exc:
-            if isinstance(exc, KeyError) and len(exc.args) > 0 and exc.args[0] == b"KEY":
+            if (
+                isinstance(exc, KeyError)
+                and len(exc.args) > 0
+                and exc.args[0] == b"KEY"
+            ):
                 log.critical("Failed to decrypt backup. Password is probably wrong.")
-            elif (isinstance(exc, FileNotFoundError)
-                    and os.path.basename(exc.filename) == "Manifest.plist"):
-                log.critical("Failed to find a valid backup at %s. "
-                             "Did you point to the right backup path?",
-                             self.backup_path)
+            elif (
+                isinstance(exc, FileNotFoundError)
+                and os.path.basename(exc.filename) == "Manifest.plist"
+            ):
+                log.critical(
+                    "Failed to find a valid backup at %s. "
+                    "Did you point to the right backup path?",
+                    self.backup_path,
+                )
             else:
                 log.exception(exc)
-                log.critical("Failed to decrypt backup. Did you provide the "
-                             "correct password? Did you point to the right "
-                             "backup path?")
+                log.critical(
+                    "Failed to decrypt backup. Did you provide the correct password? "
+                    "Did you point to the right backup path?"
+                )
 
     def decrypt_with_key_file(self, key_file: str) -> None:
         """Decrypts an encrypted iOS backup using a key file.
@@ -164,8 +189,11 @@ class DecryptBackup:
         :param key_file: File to read the key bytes to decrypt the backup
 
         """
-        log.info("Decrypting iOS backup at path %s with key file %s",
-                 self.backup_path, key_file)
+        log.info(
+            "Decrypting iOS backup at path %s with key file %s",
+            self.backup_path,
+            key_file,
+        )
 
         # Before proceeding, we check whether the backup is indeed encrypted.
         if not self.is_encrypted(self.backup_path):
@@ -176,19 +204,23 @@ class DecryptBackup:
 
         # Key should be 64 hex encoded characters (32 raw bytes)
         if len(key_bytes) != 64:
-            log.critical("Invalid key from key file. Did you provide the "
-                         "correct key file?")
+            log.critical(
+                "Invalid key from key file. Did you provide the correct key file?"
+            )
             return
 
         try:
             key_bytes_raw = binascii.unhexlify(key_bytes)
-            self._backup = iOSbackup(udid=os.path.basename(self.backup_path),
-                                     derivedkey=key_bytes_raw,
-                                     backuproot=os.path.dirname(self.backup_path))
+            self._backup = iOSbackup(
+                udid=os.path.basename(self.backup_path),
+                derivedkey=key_bytes_raw,
+                backuproot=os.path.dirname(self.backup_path),
+            )
         except Exception as exc:
             log.exception(exc)
-            log.critical("Failed to decrypt backup. Did you provide the "
-                         "correct key file?")
+            log.critical(
+                "Failed to decrypt backup. Did you provide the correct key file?"
+            )
 
     def get_key(self) -> None:
         """Retrieve and prints the encryption key."""
@@ -196,8 +228,11 @@ class DecryptBackup:
             return
 
         self._decryption_key = self._backup.getDecryptionKey()
-        log.info("Derived decryption key for backup at path %s is: \"%s\"",
-                 self.backup_path, self._decryption_key)
+        log.info(
+            'Derived decryption key for backup at path %s is: "%s"',
+            self.backup_path,
+            self._decryption_key,
+        )
 
     def write_key(self, key_path: str) -> None:
         """Save extracted key to file.
@@ -210,13 +245,15 @@ class DecryptBackup:
             return
 
         try:
-            with open(key_path, 'w', encoding="utf-8") as handle:
+            with open(key_path, "w", encoding="utf-8") as handle:
                 handle.write(self._decryption_key)
         except Exception as exc:
             log.exception(exc)
             log.critical("Failed to write key to file: %s", key_path)
             return
         else:
-            log.info("Wrote decryption key to file: %s. This file is "
-                     "equivalent to a plaintext password. Keep it safe!",
-                     key_path)
+            log.info(
+                "Wrote decryption key to file: %s. This file is "
+                "equivalent to a plaintext password. Keep it safe!",
+                key_path,
+            )

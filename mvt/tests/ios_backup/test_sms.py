@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -13,12 +13,11 @@ from ..utils import get_ios_backup_folder
 
 
 class TestSMSModule:
-
     def test_sms(self):
         m = SMS(target_path=get_ios_backup_folder())
         run_module(m)
         assert len(m.results) == 1
-        assert len(m.timeline) == 1
+        assert len(m.timeline) == 2  # SMS received and read events.
         assert len(m.detected) == 0
 
     def test_detection(self, indicator_file):

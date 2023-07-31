@@ -1,9 +1,10 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import logging
+from typing import Optional
 
 from mvt.android.parsers import parse_dumpsys_battery_history
 
@@ -13,13 +14,23 @@ from .base import AndroidExtraction
 class DumpsysBatteryHistory(AndroidExtraction):
     """This module extracts records from battery history events."""
 
-    def __init__(self, file_path: str = None, target_path: str = None,
-                 results_path: str = None, fast_mode: bool = False,
-                 log: logging.Logger = logging.getLogger(__name__),
-                 results: list = []) -> None:
-        super().__init__(file_path=file_path, target_path=target_path,
-                         results_path=results_path, fast_mode=fast_mode,
-                         log=log, results=results)
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        target_path: Optional[str] = None,
+        results_path: Optional[str] = None,
+        module_options: Optional[dict] = None,
+        log: logging.Logger = logging.getLogger(__name__),
+        results: Optional[list] = None,
+    ) -> None:
+        super().__init__(
+            file_path=file_path,
+            target_path=target_path,
+            results_path=results_path,
+            module_options=module_options,
+            log=log,
+            results=results,
+        )
 
     def check_indicators(self) -> None:
         if not self.indicators:
@@ -39,5 +50,4 @@ class DumpsysBatteryHistory(AndroidExtraction):
 
         self.results = parse_dumpsys_battery_history(output)
 
-        self.log.info("Extracted %d records from battery history",
-                      len(self.results))
+        self.log.info("Extracted %d records from battery history", len(self.results))

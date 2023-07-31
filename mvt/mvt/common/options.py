@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -16,9 +16,9 @@ class MutuallyExclusiveOption(Option):
         help_msg = kwargs.get("help", "")
         if self.mutually_exclusive:
             ex_str = ", ".join(self.mutually_exclusive)
-            kwargs["help"] = help_msg + (
-                " NOTE: This argument is mutually exclusive with "
-                "arguments: [" + ex_str + "]."
+            kwargs["help"] = (
+                f"{help_msg} NOTE: This argument is mutually exclusive with arguments"
+                f"[{ex_str}]."
             )
 
         super().__init__(*args, **kwargs)
@@ -26,8 +26,8 @@ class MutuallyExclusiveOption(Option):
     def handle_parse_result(self, ctx, opts, args):
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise UsageError(
-                f"Illegal usage: `{self.name}` is mutually exclusive with "
-                f"arguments `{', '.join(self.mutually_exclusive)}`."
+                f"Illegal usage: `{self.name}` is mutually exclusive "
+                f"with arguments `{', '.join(self.mutually_exclusive)}`."
             )
 
         return super().handle_parse_result(ctx, opts, args)

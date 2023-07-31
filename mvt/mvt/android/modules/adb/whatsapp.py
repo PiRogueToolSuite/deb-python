@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -7,7 +7,7 @@ import base64
 import logging
 import os
 import sqlite3
-from typing import Union
+from typing import Optional, Union
 
 from mvt.common.utils import check_for_links, convert_unix_to_iso
 
@@ -19,13 +19,23 @@ WHATSAPP_PATH = "data/data/com.whatsapp/databases/msgstore.db"
 class Whatsapp(AndroidExtraction):
     """This module extracts all WhatsApp messages containing links."""
 
-    def __init__(self, file_path: str = None, target_path: str = None,
-                 results_path: str = None, fast_mode: bool = False,
-                 log: logging.Logger = logging.getLogger(__name__),
-                 results: list = []) -> None:
-        super().__init__(file_path=file_path, target_path=target_path,
-                         results_path=results_path, fast_mode=fast_mode,
-                         log=log, results=results)
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        target_path: Optional[str] = None,
+        results_path: Optional[str] = None,
+        module_options: Optional[dict] = None,
+        log: logging.Logger = logging.getLogger(__name__),
+        results: Optional[list] = None,
+    ) -> None:
+        super().__init__(
+            file_path=file_path,
+            target_path=target_path,
+            results_path=results_path,
+            module_options=module_options,
+            log=log,
+            results=results,
+        )
 
     def serialize(self, record: dict) -> Union[dict, list]:
         text = record["data"].replace("\n", "\\n")
@@ -33,7 +43,7 @@ class Whatsapp(AndroidExtraction):
             "timestamp": record["isodate"],
             "module": self.__class__.__name__,
             "event": f"whatsapp_msg_{record['direction']}",
-            "data": f"\"{text}\""
+            "data": f'"{text}"',
         }
 
     def check_indicators(self) -> None:
@@ -56,9 +66,11 @@ class Whatsapp(AndroidExtraction):
         """
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT * FROM messages;
-        """)
+        """
+        )
         names = [description[0] for description in cur.description]
 
         messages = []
@@ -70,7 +82,7 @@ class Whatsapp(AndroidExtraction):
             if not message["data"]:
                 continue
 
-            message["direction"] = ("send" if message["key_from_me"] == 1 else "received")
+            message["direction"] = "send" if message["key_from_me"] == 1 else "received"
             message["isodate"] = convert_unix_to_iso(message["timestamp"])
 
             # If we find links in the messages or if they are empty we add them
@@ -84,16 +96,16 @@ class Whatsapp(AndroidExtraction):
         cur.close()
         conn.close()
 
-        self.log.info("Extracted a total of %d WhatsApp messages "
-                      "containing links", len(messages))
+        self.log.info(
+            "Extracted a total of %d WhatsApp messages containing links", len(messages)
+        )
         self.results = messages
 
     def run(self) -> None:
         self._adb_connect()
 
         try:
-            self._adb_process_file(os.path.join("/", WHATSAPP_PATH),
-                                                self._parse_db)
+            self._adb_process_file(os.path.join("/", WHATSAPP_PATH), self._parse_db)
         except Exception as exc:
             self.log.error(exc)
 

@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -23,8 +23,24 @@ from .settings import Settings
 from .sms import SMS
 from .whatsapp import Whatsapp
 
-ADB_MODULES = [ChromeHistory, SMS, Whatsapp, Processes, Getprop, Settings,
-               SELinuxStatus, DumpsysBatteryHistory, DumpsysBatteryDaily,
-               DumpsysReceivers, DumpsysActivities, DumpsysAccessibility,
-               DumpsysDBInfo, DumpsysFull, DumpsysAppOps, Packages, Logcat,
-               RootBinaries, Files]
+ADB_MODULES = [
+    ChromeHistory,
+    SMS,
+    Whatsapp,
+    Processes,
+    Getprop,
+    Settings,
+    SELinuxStatus,
+    DumpsysBatteryHistory,
+    DumpsysBatteryDaily,
+    DumpsysReceivers,
+    DumpsysActivities,
+    DumpsysAccessibility,
+    DumpsysDBInfo,
+    DumpsysFull,
+    DumpsysAppOps,
+    Packages,
+    Logcat,
+    RootBinaries,
+    Files,
+]

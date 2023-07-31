@@ -1,3 +1,9 @@
+mvt (2.4.1-1~pirogue1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Cyril Brulebois <cyril@debamax.com>  Mon, 31 Jul 2023 20:21:38 +0200
+
 mvt (2.1.4-1~pirogue1) bullseye; urgency=medium
 
   * New upstream release.

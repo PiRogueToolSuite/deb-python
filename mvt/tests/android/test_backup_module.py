@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -15,7 +15,6 @@ from ..utils import get_android_backup_folder
 
 
 class TestBackupModule:
-
     def test_module_folder(self):
         backup_path = get_android_backup_folder()
         mod = SMS(target_path=backup_path)

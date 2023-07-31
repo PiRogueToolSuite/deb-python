@@ -1,15 +1,14 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
 import logging
 import os
 import sqlite3
-from typing import Union
+from typing import Optional, Union
 
-from mvt.android.parsers.backup import (AndroidBackupParsingError,
-                                        parse_tar_for_sms)
+from mvt.android.parsers.backup import AndroidBackupParsingError, parse_tar_for_sms
 from mvt.common.module import InsufficientPrivileges
 from mvt.common.utils import check_for_links, convert_unix_to_iso
 
@@ -43,15 +42,25 @@ FROM sms;
 
 
 class SMS(AndroidExtraction):
-    """This module extracts all SMS messages containing links."""
+    """This module extracts all SMS messages."""
 
-    def __init__(self, file_path: str = None, target_path: str = None,
-                 results_path: str = None, fast_mode: bool = False,
-                 log: logging.Logger = logging.getLogger(__name__),
-                 results: list = []) -> None:
-        super().__init__(file_path=file_path, target_path=target_path,
-                         results_path=results_path, fast_mode=fast_mode,
-                         log=log, results=results)
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        target_path: Optional[str] = None,
+        results_path: Optional[str] = None,
+        module_options: Optional[dict] = None,
+        log: logging.Logger = logging.getLogger(__name__),
+        results: Optional[list] = None,
+    ) -> None:
+        super().__init__(
+            file_path=file_path,
+            target_path=target_path,
+            results_path=results_path,
+            module_options=module_options,
+            log=log,
+            results=results,
+        )
 
         self.sms_db_type = 0
 
@@ -61,7 +70,7 @@ class SMS(AndroidExtraction):
             "timestamp": record["isodate"],
             "module": self.__class__.__name__,
             "event": f"sms_{record['direction']}",
-            "data": f"{record.get('address', 'unknown source')}: \"{body}\""
+            "data": f"{record.get('address', 'unknown source')}: \"{body}\"",
         }
 
     def check_indicators(self) -> None:
@@ -72,8 +81,10 @@ class SMS(AndroidExtraction):
             if "body" not in message:
                 continue
 
-            # TODO: check links exported from the body previously.
-            message_links = check_for_links(message["body"])
+            message_links = message.get("links", [])
+            if message_links == []:
+                message_links = check_for_links(message["body"])
+
             if self.indicators.check_domains(message_links):
                 self.detected.append(message)
 
@@ -98,19 +109,19 @@ class SMS(AndroidExtraction):
             for index, value in enumerate(item):
                 message[names[index]] = value
 
-            message["direction"] = ("received" if message["incoming"] == 1 else "sent")
+            message["direction"] = "received" if message["incoming"] == 1 else "sent"
             message["isodate"] = convert_unix_to_iso(message["timestamp"])
 
-            # If we find links in the messages or if they are empty we add
-            # them to the list of results.
-            if check_for_links(message["body"]) or message["body"].strip() == "":
-                self.results.append(message)
+            # Extract links in the message body
+            links = check_for_links(message["body"])
+            message["links"] = links
+
+            self.results.append(message)
 
         cur.close()
         conn.close()
 
-        self.log.info("Extracted a total of %d SMS messages containing links",
-                      len(self.results))
+        self.log.info("Extracted a total of %d SMS messages", len(self.results))
 
     def _extract_sms_adb(self) -> None:
         """Use the Android backup command to extract SMS data from the native
@@ -127,13 +138,14 @@ class SMS(AndroidExtraction):
         try:
             self.results = parse_tar_for_sms(backup_tar)
         except AndroidBackupParsingError:
-            self.log.info("Impossible to read SMS from the Android Backup, "
-                          "please extract the SMS and try extracting it with "
-                          "Android Backup Extractor")
+            self.log.info(
+                "Impossible to read SMS from the Android Backup, "
+                "please extract the SMS and try extracting it with "
+                "Android Backup Extractor"
+            )
             return
 
-        self.log.info("Extracted a total of %d SMS messages containing links",
-                      len(self.results))
+        self.log.info("Extracted a total of %d SMS messages", len(self.results))
 
     def run(self) -> None:
         self._adb_connect()
@@ -141,20 +153,24 @@ class SMS(AndroidExtraction):
         try:
             if self._adb_check_file_exists(os.path.join("/", SMS_BUGLE_PATH)):
                 self.sms_db_type = 1
-                self._adb_process_file(os.path.join("/", SMS_BUGLE_PATH),
-                                       self._parse_db)
+                self._adb_process_file(
+                    os.path.join("/", SMS_BUGLE_PATH), self._parse_db
+                )
             elif self._adb_check_file_exists(os.path.join("/", SMS_MMSSMS_PATH)):
                 self.sms_db_type = 2
-                self._adb_process_file(os.path.join("/", SMS_MMSSMS_PATH),
-                                       self._parse_db)
+                self._adb_process_file(
+                    os.path.join("/", SMS_MMSSMS_PATH), self._parse_db
+                )
 
             self._adb_disconnect()
             return
         except InsufficientPrivileges:
             pass
 
-        self.log.warn("No SMS database found. Trying extraction of SMS data "
-                      "using Android backup feature.")
+        self.log.info(
+            "No SMS database found. Trying extraction of SMS data "
+            "using Android backup feature."
+        )
         self._extract_sms_adb()
 
         self._adb_disconnect()

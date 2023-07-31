@@ -1,5 +1,5 @@
 # Mobile Verification Toolkit (MVT)
-# Copyright (c) 2021-2022 Claudio Guarnieri.
+# Copyright (c) 2021-2023 Claudio Guarnieri.
 # Use of this software is governed by the MVT License 1.1 that can be found at
 #   https://license.mvt.re/1.1/
 
@@ -7,7 +7,7 @@ import logging
 import operator
 import sqlite3
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from mvt.common.utils import convert_mactime_to_iso
 
@@ -18,18 +18,29 @@ class NetBase(IOSExtraction):
     """This class provides a base for DataUsage and NetUsage extraction
     modules."""
 
-    def __init__(self, file_path: str = None, target_path: str = None,
-                 results_path: str = None, fast_mode: bool = False,
-                 log: logging.Logger = logging.getLogger(__name__),
-                 results: list = []) -> None:
-        super().__init__(file_path=file_path, target_path=target_path,
-                         results_path=results_path, fast_mode=fast_mode,
-                         log=log, results=results)
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        target_path: Optional[str] = None,
+        results_path: Optional[str] = None,
+        module_options: Optional[dict] = None,
+        log: logging.Logger = logging.getLogger(__name__),
+        results: Optional[list] = None,
+    ) -> None:
+        super().__init__(
+            file_path=file_path,
+            target_path=target_path,
+            results_path=results_path,
+            module_options=module_options,
+            log=log,
+            results=results,
+        )
 
     def _extract_net_data(self):
         conn = sqlite3.connect(self.file_path)
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT
                 ZPROCESS.ZFIRSTTIMESTAMP,
                 ZPROCESS.ZTIMESTAMP,
@@ -50,10 +61,12 @@ class NetBase(IOSExtraction):
                    NULL, NULL, NULL, NULL, NULL, NULL, NULL
             FROM ZPROCESS WHERE Z_PK NOT IN
                 (SELECT ZHASPROCESS FROM ZLIVEUSAGE);
-        """)
+        """
+        )
 
         for row in cur:
-            # ZPROCESS records can be missing after the JOIN. Handle NULL timestamps.
+            # ZPROCESS records can be missing after the JOIN.
+            # Handle NULL timestamps.
             if row[0] and row[1]:
                 first_isodate = convert_mactime_to_iso(row[0])
                 isodate = convert_mactime_to_iso(row[1])
@@ -66,20 +79,22 @@ class NetBase(IOSExtraction):
             else:
                 live_timestamp = ""
 
-            self.results.append({
-                "first_isodate": first_isodate,
-                "isodate": isodate,
-                "proc_name": row[2],
-                "bundle_id": row[3],
-                "proc_id": row[4],
-                "wifi_in": row[5],
-                "wifi_out": row[6],
-                "wwan_in": row[7],
-                "wwan_out": row[8],
-                "live_id": row[9],
-                "live_proc_id": row[10],
-                "live_isodate": live_timestamp if row[10] else first_isodate,
-            })
+            self.results.append(
+                {
+                    "first_isodate": first_isodate,
+                    "isodate": isodate,
+                    "proc_name": row[2],
+                    "bundle_id": row[3],
+                    "proc_id": row[4],
+                    "wifi_in": row[5],
+                    "wifi_out": row[6],
+                    "wwan_in": row[7],
+                    "wwan_out": row[8],
+                    "live_id": row[9],
+                    "live_proc_id": row[10],
+                    "live_isodate": live_timestamp if row[10] else first_isodate,
+                }
+            )
 
         cur.close()
         conn.close()
@@ -87,40 +102,50 @@ class NetBase(IOSExtraction):
         self.log.info("Extracted information on %d processes", len(self.results))
 
     def serialize(self, record: dict) -> Union[dict, list]:
-        record_data = (f"{record['proc_name']} (Bundle ID: {record['bundle_id']},"
-                       f" ID: {record['proc_id']})")
-        record_data_usage = (record_data + " "
-                             f"WIFI IN: {record['wifi_in']}, "
-                             f"WIFI OUT: {record['wifi_out']} - "
-                             f"WWAN IN: {record['wwan_in']}, "
-                             f"WWAN OUT: {record['wwan_out']}")
+        record_data = (
+            f"{record['proc_name']} (Bundle ID: {record['bundle_id']},"
+            f" ID: {record['proc_id']})"
+        )
+        record_data_usage = (
+            record_data + " "
+            f"WIFI IN: {record['wifi_in']}, "
+            f"WIFI OUT: {record['wifi_out']} - "
+            f"WWAN IN: {record['wwan_in']}, "
+            f"WWAN OUT: {record['wwan_out']}"
+        )
 
-        records = [{
-            "timestamp": record["live_isodate"],
-            "module": self.__class__.__name__,
-            "event": "live_usage",
-            "data": record_data_usage,
-        }]
+        records = [
+            {
+                "timestamp": record["live_isodate"],
+                "module": self.__class__.__name__,
+                "event": "live_usage",
+                "data": record_data_usage,
+            }
+        ]
 
         # Only included first_usage and current_usage records when a
         # ZPROCESS entry exists.
-        if ("MANIPULATED" not in record["proc_name"]
-                and "MISSING" not in record["proc_name"]
-                and record["live_proc_id"] is not None):
-            records.extend([
-                {
-                    "timestamp": record["first_isodate"],
-                    "module": self.__class__.__name__,
-                    "event": "first_usage",
-                    "data": record_data,
-                },
-                {
-                    "timestamp": record["isodate"],
-                    "module": self.__class__.__name__,
-                    "event": "current_usage",
-                    "data": record_data,
-                }
-            ])
+        if (
+            "MANIPULATED" not in record["proc_name"]
+            and "MISSING" not in record["proc_name"]
+            and record["live_proc_id"] is not None
+        ):
+            records.extend(
+                [
+                    {
+                        "timestamp": record["first_isodate"],
+                        "module": self.__class__.__name__,
+                        "event": "first_usage",
+                        "data": record_data,
+                    },
+                    {
+                        "timestamp": record["isodate"],
+                        "module": self.__class__.__name__,
+                        "event": "current_usage",
+                        "data": record_data,
+                    },
+                ]
+            )
 
         return records
 
@@ -132,9 +157,11 @@ class NetBase(IOSExtraction):
             return
 
         # If we are instructed to run fast, we skip this.
-        if self.fast_mode:
-            self.log.info("Flag --fast was enabled: skipping extended "
-                          "search for suspicious processes")
+        if self.module_options.get("fast_mode", None):
+            self.log.info(
+                "Option 'fast_mode' was enabled: skipping extended "
+                "search for suspicious processes"
+            )
             return
 
         self.log.info("Extended search for suspicious processes ...")
@@ -151,8 +178,9 @@ class NetBase(IOSExtraction):
 
         for proc in self.results:
             if not proc["bundle_id"]:
-                self.log.debug("Found process with no Bundle ID with "
-                               "name: %s", proc["proc_name"])
+                self.log.debug(
+                    "Found process with no Bundle ID with name: %s", proc["proc_name"]
+                )
 
                 binary_path = None
                 for file in files:
@@ -163,20 +191,28 @@ class NetBase(IOSExtraction):
                 if binary_path:
                     self.log.debug("Located at %s", binary_path)
                 else:
-                    msg = ("Could not find the binary associated with the "
-                           f"process with name {proc['proc_name']}")
+                    msg = (
+                        "Could not find the binary associated with the "
+                        f"process with name {proc['proc_name']}"
+                    )
                     if not proc["proc_name"]:
-                        msg = ("Found process entry with empty 'proc_name': "
-                               f"{proc['live_proc_id']} at {proc['live_isodate']}")
+                        msg = (
+                            "Found process entry with empty 'proc_name': "
+                            f"{proc['live_proc_id']} at {proc['live_isodate']}"
+                        )
                     elif len(proc["proc_name"]) == 16:
-                        msg += (" (However, the process name might have "
-                                "been truncated in the database)")
+                        msg += (
+                            " (However, the process name might have "
+                            "been truncated in the database)"
+                        )
 
                     self.log.warning(msg)
             if not proc["live_proc_id"]:
-                self.log.info("Found process entry in ZPROCESS but not in "
-                              "ZLIVEUSAGE: %s at %s",
-                              proc['proc_name'], proc['live_isodate'])
+                self.log.info(
+                    "Found process entry in ZPROCESS but not in ZLIVEUSAGE: %s at %s",
+                    proc["proc_name"],
+                    proc["live_isodate"],
+                )
 
     def check_manipulated(self):
         """Check for missing or manipulate DB entries"""
@@ -189,9 +225,11 @@ class NetBase(IOSExtraction):
             # Avoid duplicate warnings for same process.
             if result["live_proc_id"] not in missing_process_cache:
                 missing_process_cache.add(result["live_proc_id"])
-                self.log.warning("Found manipulated process entry %s. "
-                                 "Entry on %s", result["live_proc_id"],
-                                 result["live_isodate"])
+                self.log.warning(
+                    "Found manipulated process entry %s. Entry on %s",
+                    result["live_proc_id"],
+                    result["live_isodate"],
+                )
 
             # Set manipulated proc timestamp so it appears in timeline.
             result["first_isodate"] = result["isodate"] = result["live_isodate"]
@@ -199,8 +237,11 @@ class NetBase(IOSExtraction):
             self.detected.append(result)
 
     def find_deleted(self):
-        """Identify process which may have been deleted from the DataUsage database"""
-        results_by_proc = {proc["proc_id"]: proc for proc in self.results if proc["proc_id"]}
+        """Identify process which may have been deleted from the DataUsage
+        database."""
+        results_by_proc = {
+            proc["proc_id"]: proc for proc in self.results if proc["proc_id"]
+        }
         all_proc_id = sorted(results_by_proc.keys())
 
         # Fix issue #108
@@ -211,9 +252,12 @@ class NetBase(IOSExtraction):
         for proc_id in range(min(all_proc_id), max(all_proc_id)):
             if proc_id not in all_proc_id:
                 previous_proc = results_by_proc[last_proc_id]
-                self.log.info("Missing process %d. Previous process at \"%s\" (%s)",
-                              proc_id, previous_proc["first_isodate"],
-                              previous_proc["proc_name"])
+                self.log.info(
+                    'Missing process %d. Previous process at "%s" (%s)',
+                    proc_id,
+                    previous_proc["first_isodate"],
+                    previous_proc["proc_name"],
+                )
 
                 missing_procs[proc_id] = {
                     "proc_id": proc_id,
@@ -229,15 +273,16 @@ class NetBase(IOSExtraction):
         for proc_id, proc in missing_procs.items():
             # Set default DataUsage keys.
             result = {key: None for key in self.results[0].keys()}
-            result["first_isodate"] = result["isodate"] = result["live_isodate"] = proc["prev_proc_first"]
+            result["first_isodate"] = result["isodate"] = result["live_isodate"] = proc[
+                "prev_proc_first"
+            ]
             result["proc_name"] = f"MISSING [follows {proc['prev_proc_name']}]"
             result["proc_id"] = result["live_proc_id"] = proc["proc_id"]
             result["bundle_id"] = None
 
             self.results.append(result)
 
-        self.results = sorted(self.results,
-                              key=operator.itemgetter("first_isodate"))
+        self.results = sorted(self.results, key=operator.itemgetter("first_isodate"))
 
     def check_indicators(self) -> None:
         # Check for manipulated process records.
