@@ -1,4 +1,4 @@
-mvt (2.4.1-1~pirogue1) UNRELEASED; urgency=medium
+mvt (2.4.1-1~pirogue1) bookworm; urgency=medium
 
   * New upstream release.
   * Add python3-ahocorasick to Build-Depends.
@@ -6,7 +6,7 @@ mvt (2.4.1-1~pirogue1) UNRELEASED; urgency=medium
   * Delete unversion-cryptography.diff patch, bookworm has a sufficient
     version.
 
- -- Cyril Brulebois <cyril@debamax.com>  Mon, 31 Jul 2023 20:21:38 +0200
+ -- Cyril Brulebois <cyril@debamax.com>  Mon, 31 Jul 2023 21:24:25 +0200
 
 mvt (2.1.4-1~pirogue1) bullseye; urgency=medium
 
