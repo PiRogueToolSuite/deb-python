@@ -2,6 +2,7 @@ mvt (2.4.1-1~pirogue1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Add python3-ahocorasick to Build-Depends.
+  * Fix missing python3-yaml in Build-Depends.
   * Delete unversion-cryptography.diff patch, bookworm has a sufficient
     version.
 

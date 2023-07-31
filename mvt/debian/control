@@ -19,6 +19,7 @@ Build-Depends:
  python3-tld,
  python3-tqdm,
  python3-usb1,
+ python3-yaml,
 Standards-Version: 4.2.0
 Homepage: https://github.com/mvt-project/mvt
 
