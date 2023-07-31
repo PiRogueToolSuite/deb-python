@@ -1,6 +1,7 @@
 mvt (2.4.1-1~pirogue1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Add python3-ahocorasick to Build-Depends.
 
  -- Cyril Brulebois <cyril@debamax.com>  Mon, 31 Jul 2023 20:21:38 +0200
 
