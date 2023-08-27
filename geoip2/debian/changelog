@@ -1,3 +1,9 @@
+geoip2 (4.5.0-1~pirogue2) bookworm; urgency=medium
+
+  * Rebuild for bookworm.
+
+ -- Cyril Brulebois <cyril@debamax.com>  Sun, 27 Aug 2023 23:39:06 +0200
+
 geoip2 (4.5.0-1~pirogue1) bullseye; urgency=low
 
   * Initial, minimal packaging for the PiRogue (based on bullseye), see
