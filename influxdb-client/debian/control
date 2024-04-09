@@ -1,0 +1,26 @@
+Source: influxdb-client
+Section: python
+Priority: optional
+Maintainer: Cyril Brulebois <cyril@debamax.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-certifi,
+               python3-dateutil,
+               python3-pkg-resources,
+               python3-setuptools,
+               python3-urllib3,
+Standards-Version: 4.6.2.0
+Testsuite: autopkgtest-pkg-pybuild
+Homepage: https://github.com/influxdata/influxdb-client-python
+Rules-Requires-Root: no
+
+Package: python3-influxdb-client
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ python3-reactivex,
+Description: InfluxDB 2.0 Python client library
+ This package contains the Python client library for use with InfluxDB
+ 2.x and Flux.
