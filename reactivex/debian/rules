@@ -1,0 +1,14 @@
+#! /usr/bin/make -f
+
+export PYBUILD_NAME=reactivex
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+# setup.py declares tests, some of which require extra modules or access to X:
+override_dh_auto_test:
+	@echo "Skipping test suite."
+
+# Shipped in the tarball, modified after a build:
+override_dh_clean:
+	dh_clean
+	rm -rf reactivex.egg-info/

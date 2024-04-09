@@ -1,0 +1,6 @@
+reactivex (4.0.4-1~pirogue1) bookworm; urgency=low
+
+  * Initial, minimal packaging for the PiRogue (based on bookworm), see
+    <https://github.com/PiRogueToolSuite/deb-python> for more information.
+
+ -- Cyril Brulebois <cyril@debamax.com>  Tue, 09 Apr 2024 12:16:31 +0000

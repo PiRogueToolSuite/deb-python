@@ -1,0 +1,22 @@
+Source: reactivex
+Section: python
+Priority: optional
+Maintainer: Cyril Brulebois <cyril@debamax.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-typing-extensions (>= 4.1.1),
+Standards-Version: 4.6.2.0
+Testsuite: autopkgtest-pkg-pybuild
+Homepage: https://github.com/ReactiveX/RxPY
+Rules-Requires-Root: no
+
+Package: python3-reactivex
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ python3-typing-extensions (>= 4.1.1),
+Description: ReactiveX Python client library
+ This is a library for composing asynchronous and event-based programs
+ using observable collections and query operator functions in Python.
