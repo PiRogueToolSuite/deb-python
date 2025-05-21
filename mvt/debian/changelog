@@ -2,6 +2,7 @@ mvt (2.6.0-1~pirogue1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Reintroduce unversion-cryptography.diff patch.
+  * Adjust mvt.egg-info/ cleanup (now under src/).
 
  -- Cyril Brulebois <cyril@debamax.com>  Wed, 21 May 2025 22:15:24 +0200
 

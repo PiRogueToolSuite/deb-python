@@ -7,4 +7,4 @@ export PYBUILD_NAME=mvt
 # Shipped in the tarball, modified after a build:
 override_dh_clean:
 	dh_clean
-	rm -rf mvt.egg-info/
+	rm -rf src/mvt.egg-info/
